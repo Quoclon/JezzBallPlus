@@ -16,7 +16,11 @@ public class BallController : MonoBehaviour
     [SerializeField]
     private float speed = 10f;
     private int[] directionArray = new int[] { -1, 1 }; //todo: add direction '0'?
-    private float collisionBoundary = 3.8f;
+
+    private ContactFilter2D contactFilter;
+    private RaycastHit2D[] hitBuffer = new RaycastHit2D[16];
+    private const float rayCastDistance = 0.1f;
+    private float collisionBoundary = 0.2f;
 
     void Start()
     {
@@ -27,29 +31,43 @@ public class BallController : MonoBehaviour
         int randY = Random.Range(0, directionArray.Length);
         float vecX = directionArray[randX] * speed * Time.deltaTime;
         float vecY = directionArray[randY] * speed * Time.deltaTime;
-        _body.velocity = new Vector2(vecX, vecY);        
+        _body.velocity = new Vector2(vecX, vecY);
+
+        contactFilter.useTriggers = false;
+        contactFilter.SetLayerMask(Physics2D.GetLayerCollisionMask(gameObject.layer));
+        contactFilter.useLayerMask = true;
     }
 
     void Update()
     {
-        
-    }
+        int count = _body.Cast(_body.velocity, contactFilter, hitBuffer, rayCastDistance);
+        if (count > 0)
+        {
+            float xVel = _body.velocity.x;
+            float yVel = _body.velocity.y;
+            RaycastHit2D hit = hitBuffer[0];
+            Vector2 collisionPoint = hit.point;
 
-    //top-right collision point: 3.7, 4.0
-    //bottom-right collision point: 3.7, -4.0
-    //top-left: -3.7, 4.0
-    //bottom-left:
-    void OnCollisionEnter2D(Collision2D collision)
-    {
-        Debug.Log("First point that collided: " + collision.contacts[0].point);
-        Vector2 collisionPoint = collision.contacts[0].point;
-        float xVel = _body.velocity.x;
-        float yVel = _body.velocity.y;
-        if (Mathf.Abs(collisionPoint.x) >= collisionBoundary)
-            xVel *= -1f;
-        if (Mathf.Abs(collisionPoint.y) >= collisionBoundary)
-            yVel *= -1f;
-        _body.velocity = new Vector2(xVel, yVel);         
-    }
+            //Debug.Log("Current Position: " + _body.transform.position);
+            //Debug.Log("Collider Position: " + collisionPoint);
+            //Debug.Log("X calculation: " + Mathf.Abs(collisionPoint.x - _body.transform.position.x));
 
+            if (Mathf.Abs(collisionPoint.y - _body.transform.position.y) >= collisionBoundary)
+            {
+                yVel *= -1;
+                //ensure ball is moving at top speed - not sure if this code actually works
+                if (Mathf.Abs(yVel) < speed * Time.deltaTime)
+                    yVel = Mathf.Sign(yVel) * speed * Time.deltaTime;
+            }                
+            if (Mathf.Abs(collisionPoint.x - _body.transform.position.x) >= collisionBoundary)
+            {
+                xVel *= -1;
+                //ensure ball is moving at top speed - not sure if this code actually works
+                if (Mathf.Abs(xVel) < speed * Time.deltaTime)
+                    xVel = Mathf.Sign(xVel) * speed * Time.deltaTime;
+                
+            }                
+            _body.velocity = new Vector2(xVel, yVel);
+        }
+    }
 }
