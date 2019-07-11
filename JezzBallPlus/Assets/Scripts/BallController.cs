@@ -7,6 +7,7 @@ public class BallController : MonoBehaviour
     //GameObject components
     private SpriteRenderer _sprite;
     private Rigidbody2D _body;
+    private CircleCollider2D _circle;
 
     //sprites
     [SerializeField]
@@ -26,6 +27,7 @@ public class BallController : MonoBehaviour
     {
         _sprite = GetComponent<SpriteRenderer>();
         _body = GetComponent<Rigidbody2D>();
+        _circle = GetComponent<CircleCollider2D>();
 
         int randX = Random.Range(0, directionArray.Length);
         int randY = Random.Range(0, directionArray.Length);
@@ -47,7 +49,7 @@ public class BallController : MonoBehaviour
             float yVel = _body.velocity.y;
             RaycastHit2D hit = hitBuffer[0];
             Vector2 collisionPoint = hit.point;
-
+            
             //Debug.Log("Current Position: " + _body.transform.position);
             //Debug.Log("Collider Position: " + collisionPoint);
             //Debug.Log("X calculation: " + Mathf.Abs(collisionPoint.x - _body.transform.position.x));
@@ -64,10 +66,9 @@ public class BallController : MonoBehaviour
                 xVel *= -1;
                 //ensure ball is moving at top speed - not sure if this code actually works
                 if (Mathf.Abs(xVel) < speed * Time.deltaTime)
-                    xVel = Mathf.Sign(xVel) * speed * Time.deltaTime;
-                
+                    xVel = Mathf.Sign(xVel) * speed * Time.deltaTime;                
             }                
             _body.velocity = new Vector2(xVel, yVel);
-        }
+        }        
     }
 }
