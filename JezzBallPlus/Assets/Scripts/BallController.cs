@@ -42,6 +42,7 @@ public class BallController : MonoBehaviour
 
     void Update()
     {
+        //todo: use OverlapCircleAll instead?  currently, balls will only react based on collision directly in front of them
         int count = _body.Cast(_body.velocity, contactFilter, hitBuffer, rayCastDistance);
         if (count > 0)
         {

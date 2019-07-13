@@ -6,27 +6,28 @@ public class WallGenerator : MonoBehaviour
 {
     [SerializeField]
     private GameObject _wallPrefab;
+    private GameObject _wallOne;
+    private GameObject _wallTwo;
 
-    private GameObject _WallOne;
+    [SerializeField]
+    private float _scaleSpeed = 0.05f;    
 
     void Start()
     {
-        _WallOne = Instantiate(_wallPrefab) as GameObject;
-
-        _WallOne.transform.position = transform.position;
-        RectTransform rt = _WallOne.GetComponent<RectTransform>();
-        BoxCollider2D box = _WallOne.GetComponent<BoxCollider2D>();
-        //float width = rt.rect.width;
-        //float height = rt.rect.height;
+        _wallOne = Instantiate(_wallPrefab) as GameObject;
+        _wallOne.GetComponent<SpriteRenderer>().color = Color.red;
+        _wallOne.transform.position = transform.position;
+        BoxCollider2D box = _wallOne.GetComponent<BoxCollider2D>();
         float width = box.bounds.size.x;
         float height = box.bounds.size.y;
+        _wallOne.transform.position = new Vector3(transform.position.x + (width / 2), transform.position.y + (height / 2), 0);
+        _wallOne.transform.SetParent(transform, true);
 
-        float newX = transform.position.x + (width / 2);
-        float newY = transform.position.y + (height / 2);
-        _WallOne.transform.position = new Vector3(newX, newY, 0);
-
-        _WallOne.transform.SetParent(transform, true);
-
+        _wallTwo = Instantiate(_wallPrefab) as GameObject;
+        _wallTwo.GetComponent<SpriteRenderer>().color = Color.blue;
+        _wallTwo.transform.position = transform.position;
+        _wallTwo.transform.position = new Vector3(transform.position.x + (width / 2), transform.position.y - (height / 2), 0);
+        _wallTwo.transform.SetParent(transform, true);
     }
 
 
@@ -36,7 +37,7 @@ public class WallGenerator : MonoBehaviour
         float xScale = localScale.x;
         float yScale = localScale.y;
         float zScale = localScale.z;
-        yScale += 0.01f;
+        yScale += _scaleSpeed;
         transform.localScale = new Vector3(xScale, yScale, zScale);
     }
 }
