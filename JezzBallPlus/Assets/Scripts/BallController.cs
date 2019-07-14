@@ -50,10 +50,6 @@ public class BallController : MonoBehaviour
             float yVel = _body.velocity.y;
             RaycastHit2D hit = hitBuffer[0];
             Vector2 collisionPoint = hit.point;
-            
-            //Debug.Log("Current Position: " + _body.transform.position);
-            //Debug.Log("Collider Position: " + collisionPoint);
-            //Debug.Log("X calculation: " + Mathf.Abs(collisionPoint.x - _body.transform.position.x));
 
             if (Mathf.Abs(collisionPoint.y - _body.transform.position.y) >= collisionBoundary)
             {
@@ -70,6 +66,13 @@ public class BallController : MonoBehaviour
                     xVel = Mathf.Sign(xVel) * speed * Time.deltaTime;                
             }                
             _body.velocity = new Vector2(xVel, yVel);
+
+            //if ball detects an extending wall, destroy the wall
+            if(string.Equals(hit.transform.gameObject.tag, "Wall", System.StringComparison.OrdinalIgnoreCase))
+            {
+                if (hit.transform.gameObject.GetComponent<WallBehavior>().IsExtending() == true)
+                    Destroy(hit.transform.gameObject);
+            }
         }        
     }
 }

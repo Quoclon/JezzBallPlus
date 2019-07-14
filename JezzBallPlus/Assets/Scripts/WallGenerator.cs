@@ -40,4 +40,5 @@ public class WallGenerator : MonoBehaviour
         yScale += _scaleSpeed;
         transform.localScale = new Vector3(xScale, yScale, zScale);
     }
+
 }
