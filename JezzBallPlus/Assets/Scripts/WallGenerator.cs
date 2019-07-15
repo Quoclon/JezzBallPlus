@@ -9,6 +9,8 @@ public class WallGenerator : MonoBehaviour
     private GameObject _wallOne;
     private GameObject _wallTwo;
 
+    public Vector3 CursorRotation;
+
     [SerializeField]
     private float _scaleSpeed = 0.05f;    
 
@@ -30,15 +32,22 @@ public class WallGenerator : MonoBehaviour
         _wallTwo.transform.SetParent(transform, true);
     }
 
-
     void Update()
     {
+        //ensure rotation matches cursor
+        if (transform.eulerAngles != CursorRotation)
+            transform.eulerAngles = CursorRotation;
+
         Vector3 localScale = transform.localScale;
         float xScale = localScale.x;
         float yScale = localScale.y;
         float zScale = localScale.z;
         yScale += _scaleSpeed;
         transform.localScale = new Vector3(xScale, yScale, zScale);
+
+        //destroy if no children
+        if (transform.childCount == 0)
+            Destroy(this.gameObject);
     }
 
 }

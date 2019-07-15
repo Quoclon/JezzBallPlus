@@ -5,5 +5,6 @@ using UnityEngine;
 public enum RotationType
 {
     Scroll,
-    Click
+    ClickFour,
+    ClickTwo
 }
