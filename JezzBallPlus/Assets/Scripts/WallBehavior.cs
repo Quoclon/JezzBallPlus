@@ -33,11 +33,6 @@ public class WallBehavior : MonoBehaviour
             {
                 grid.GetComponent<GridController>().OnWallCreate(gameObject);
             }
-            //Renderer rend = gameObject.GetComponent<Renderer>();
-            //Debug.Log("Bounds: " + rend.bounds);
-            //Debug.Log("Center: " + rend.bounds.center);
-            //Debug.Log("Extents: " + rend.bounds.extents);
-            //Debug.Log("Max: " + rend.bounds.max);
         }            
     }
 

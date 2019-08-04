@@ -31,6 +31,7 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        //todo: ensure we can't create walls outside the play area
         //move character
         Vector3 mousePos = Input.mousePosition;
         Vector3 worldPoint = Camera.main.ScreenToWorldPoint(mousePos);

@@ -137,7 +137,47 @@ public class GridController : MonoBehaviour
 
     private void FloodFill(GameObject tile)
     {
-        Debug.Log("Flood filling for: " + tile.transform.position);
+        //1. check to see if current block is _cyan
+        //2. if yes, destroy and replace with a black block
+        //3. ray-cast downward, left, right, and upward
+        //4. if there's a game-object, pass it into a new execution of FloodFill()
+
+        if (tile.name.Contains("Cyan"))
+        {
+            Vector3 pos = tile.transform.position;
+            Destroy(tile);
+            GameObject block = Instantiate(_blackBlock) as GameObject;
+            block.transform.position = pos;
+            block.transform.SetParent(transform, true);
+            block.layer = 8;
+
+            RaycastHit2D left = Physics2D.Raycast(tile.transform.position, Vector2.left, _offsetX, 1 << LayerMask.NameToLayer("Grid"));
+            if (left.collider != null)
+            {
+                if (left.collider.gameObject != null)
+                    FloodFill(left.collider.gameObject);
+            }
+
+            RaycastHit2D right = Physics2D.Raycast(tile.transform.position, Vector2.right, _offsetX, 1 << LayerMask.NameToLayer("Grid"));
+            if (right.collider != null)
+            {
+                if (right.collider.gameObject != null)
+                    FloodFill(right.collider.gameObject);
+            }
+
+            RaycastHit2D up = Physics2D.Raycast(tile.transform.position, Vector2.up, _offsetX, 1 << LayerMask.NameToLayer("Grid"));
+            if (up.collider != null)
+            {
+                if (up.collider.gameObject != null)
+                    FloodFill(up.collider.gameObject);
+            }
+            RaycastHit2D down = Physics2D.Raycast(tile.transform.position, Vector2.down, _offsetX, 1 << LayerMask.NameToLayer("Grid"));
+            if (down.collider != null)
+            {
+                if (down.collider.gameObject != null)
+                    FloodFill(down.collider.gameObject);
+            }
+        }        
     }
 
     private void ResetTileCounts()
