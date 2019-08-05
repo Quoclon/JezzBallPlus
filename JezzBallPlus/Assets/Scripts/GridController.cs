@@ -9,41 +9,24 @@ public class GridController : MonoBehaviour
     private GameObject _cyanBlock;
     [SerializeField]
     private GameObject _blackBlock;
+    [SerializeField]
+    private GameObject _horizontalWall;
+    [SerializeField]
+    private GameObject _verticalWall;
 
-    private int _startingColorCount;
-    private int _targetColorCount;
-    private int _totalCount;
+    private float _arenaArea;
+    private float _filledArea;
+    private float _filledAreaPercent;
 
-    private int[,] startingArray = new int[180, 80];
-
-    private float _startingX = -8.94998f;
-    private float _startingY = 3.95f;
-    private float _offsetX = 0.1f;
-    private float _offsetY = 0.1f;
-
-    private ContactFilter2D contactFilter;
+    private float _squareSize = 0.1f;
+    private const float RAYCAST_DISTANCE = 0.5f;    
 
     void Start()
     {
-        for (int i = 0; i < startingArray.GetLength(0); i++)
-        {
-            for (int j = 0; j < startingArray.GetLength(1); j++)
-            {
-                GameObject block = Instantiate(_cyanBlock) as GameObject;
-                float xPos = _startingX + (_offsetX * i);
-                float yPos = _startingY - (_offsetY * j);
-                block.transform.position = new Vector3(xPos, yPos, 0);
-                block.transform.SetParent(transform, true);
-                block.layer = 8;
-            }
-        }
-        ResetTileCounts();
-
-        contactFilter.useTriggers = false;
-        contactFilter.SetLayerMask(Physics2D.GetLayerCollisionMask(8));
-        contactFilter.useLayerMask = true;
+        BoxCollider2D horizontalBox = _horizontalWall.GetComponent<BoxCollider2D>();
+        BoxCollider2D verticalBox = _verticalWall.GetComponent<BoxCollider2D>();
+        _arenaArea = horizontalBox.bounds.size.x * verticalBox.bounds.size.y;
     }
-
     // Update is called once per frame
     void Update()
     {
@@ -52,183 +35,141 @@ public class GridController : MonoBehaviour
 
     public void OnWallCreate(GameObject wall)
     {
-        Renderer rend = wall.GetComponent<Renderer>();
-        BoxCollider2D coll = wall.GetComponent<BoxCollider2D>();
-        GameObject[] tiles = GameObject.FindGameObjectsWithTag("Tile");
-        List<GameObject> newTiles = new List<GameObject>();
-
-        foreach (GameObject tile in tiles)
-        {
-            //if tile is covered by the newly created wall
-            if (coll.bounds.Contains(tile.transform.position))
-            {
-                //replace non-black tiles with black tiles
-                if (!tile.name.Contains("Black"))
-                {
-                    Vector3 pos = tile.transform.position;
-                    Destroy(tile);
-                    GameObject block = Instantiate(_blackBlock) as GameObject;
-                    block.transform.position = pos;
-                    block.transform.SetParent(transform, true);
-                    block.layer = 8;
-                    newTiles.Add(block);
-                }
-            }
-        }
+        BoxCollider2D box = wall.GetComponent<BoxCollider2D>();
+        float area = box.bounds.size.x * box.bounds.size.y;
+        _filledArea += area;
+        _filledAreaPercent = (_filledArea / _arenaArea) * 100f;
+        Debug.Log("Percent: " + _filledAreaPercent);
 
         //get direction of wall
         //if z-rotation is 0 or 180 it is a vertical wall
         //if z-rotation is 90 or 270 it is a horizontal wall
         if (wall.transform.rotation.z == 0 || wall.transform.rotation.z == 180)
         {
-            //vertical wall: find tiles with far-right x / middle y and far - left x / middle y
-            float minX = newTiles.OrderBy(t => t.transform.position.x).First().transform.position.x;
-            float maxX = newTiles.OrderByDescending(t => t.transform.position.x).First().transform.position.x;
-            float y = GetMedianYCoordinate(newTiles);
-            GameObject minTile = newTiles.Where(x => x.transform.position.x == minX).Where(z => z.transform.position.y == y).First();
-            GameObject maxTile = newTiles.Where(x => x.transform.position.x == maxX).Where(z => z.transform.position.y == y).First();
-            //raycast to the left of minTile
-            RaycastHit2D minRay = Physics2D.Raycast(minTile.transform.position, Vector2.left, _offsetX, 1 << LayerMask.NameToLayer("Grid"));
-            //Vector2 forward = transform.TransformDirection(Vector2.left) * 0.1f;
-            //Debug.DrawRay(minTile.transform.position, forward, Color.red, 100);
-            //raycast to the right of maxTile
-            RaycastHit2D maxRay = Physics2D.Raycast(maxTile.transform.position, Vector2.right, _offsetX, 1 << LayerMask.NameToLayer("Grid"));
-
-            if (minRay.collider != null)
-            {
-                if (minRay.collider.gameObject != null)
-                    FloodFill(minRay.collider.gameObject);
-            }
-            if (maxRay.collider != null)
-            {
-                if (maxRay.collider.gameObject != null)
-                    FloodFill(maxRay.collider.gameObject);
-            }
+            //vertical wall: find far-right x / middle y and far - left x / middle y
+            float maxX = box.bounds.max.x;
+            float minX = box.bounds.min.x;
+            float y = wall.transform.position.y;
+            Vector3 leftPoint = new Vector3(minX - RAYCAST_DISTANCE, y, 0);
+            Vector3 rightPoint = new Vector3(maxX + RAYCAST_DISTANCE, y, 0);
+            //Debug.Log("left:" + leftPoint);
+            //Debug.Log("right:" + rightPoint);
+            //FloodFill(leftPoint);
+            FloodFill(rightPoint);
         }
         else
         {
-            //horizontal wall: find tiles with middle x/top y and middle x/top y
-            float x = GetMedianXCoordinate(newTiles);
-            float minY = newTiles.OrderBy(t => t.transform.position.y).First().transform.position.y;
-            float maxY = newTiles.OrderByDescending(t => t.transform.position.y).First().transform.position.y;
-            GameObject minTile = newTiles.Where(t => t.transform.position.x == x).Where(z => z.transform.position.y == minY).First();
-            GameObject maxTile = newTiles.Where(t => t.transform.position.x == x).Where(z => z.transform.position.y == maxY).First();
-            //raycast to the bottom of minTile
-            RaycastHit2D minRay = Physics2D.Raycast(minTile.transform.position, Vector2.down, _offsetX, 1 << LayerMask.NameToLayer("Grid"));
-            //raycast to the top of maxTile
-            RaycastHit2D maxRay = Physics2D.Raycast(maxTile.transform.position, Vector2.up, _offsetX, 1 << LayerMask.NameToLayer("Grid"));
-
-
-            if (minRay.collider != null)
-            {
-                if (minRay.collider.gameObject != null)
-                    FloodFill(minRay.collider.gameObject);
-            }
-            if (maxRay.collider != null)
-            {
-                if (maxRay.collider.gameObject != null)
-                    FloodFill(maxRay.collider.gameObject);
-            }
+            //horizontal wall: find middle x/top y and middle x/top y
+            float minY = box.bounds.min.y;
+            float maxY = box.bounds.max.y;
+            float x = wall.transform.position.x;
+            Vector3 downPoint = new Vector3(x, minY - RAYCAST_DISTANCE, 0);
+            Vector3 upPoint = new Vector3(x, maxY + RAYCAST_DISTANCE, 0);
+            //Debug.Log("down:" + downPoint);
+            //Debug.Log("up:" + upPoint);
         }
-
-
-        ResetTileCounts();
     }
 
-    private void FloodFill(GameObject tile)
+
+    private void FloodFill(Vector3 point)
     {
-        //1. check to see if current block is _cyan
-        //2. if yes, destroy and replace with a black block
-        //3. ray-cast downward, left, right, and upward
-        //4. if there's a game-object, pass it into a new execution of FloodFill()
+        List<Vector3> checkedPoints = new List<Vector3>();
+        Queue<Vector3> pointsToCheck = new Queue<Vector3>();
+        pointsToCheck.Enqueue(point);
 
-        if (tile.name.Contains("Cyan"))
+       // int executionNumber = 0;
+        while (pointsToCheck.Count > 0)
         {
-            Vector3 pos = tile.transform.position;
-            Destroy(tile);
-            GameObject block = Instantiate(_blackBlock) as GameObject;
-            block.transform.position = pos;
-            block.transform.SetParent(transform, true);
-            block.layer = 8;
+            //executionNumber++;
+            //if (executionNumber > 15000)
+            //    Debug.Log("Something is wrong");
 
-            RaycastHit2D left = Physics2D.Raycast(tile.transform.position, Vector2.left, _offsetX, 1 << LayerMask.NameToLayer("Grid"));
+            Vector3 _point = pointsToCheck.Dequeue();
+            if (checkedPoints.Contains(_point))
+                continue;
+            checkedPoints.Add(_point);
+
+            RaycastHit2D left = Physics2D.Raycast(_point, Vector2.left, RAYCAST_DISTANCE, 1 << LayerMask.NameToLayer("Default"));
+            RaycastHit2D right = Physics2D.Raycast(_point, Vector2.right, RAYCAST_DISTANCE, 1 << LayerMask.NameToLayer("Default"));
+            RaycastHit2D up = Physics2D.Raycast(_point, Vector2.up, RAYCAST_DISTANCE, 1 << LayerMask.NameToLayer("Default"));
+            RaycastHit2D down = Physics2D.Raycast(_point, Vector2.down, RAYCAST_DISTANCE, 1 << LayerMask.NameToLayer("Default"));
+
             if (left.collider != null)
             {
                 if (left.collider.gameObject != null)
-                    FloodFill(left.collider.gameObject);
+                {
+                    if (left.collider.gameObject.name.Contains("Circle"))
+                        return;
+                    else if (left.collider.gameObject.name.Contains("Boundary") || left.collider.gameObject.name.Contains("Wall"))
+                        checkedPoints.Add(left.point);
+                }
+            }
+            else
+            {
+                Vector3 newPoint = new Vector3(_point.x - RAYCAST_DISTANCE, _point.y, _point.z);
+                if (!checkedPoints.Contains(newPoint))
+                    pointsToCheck.Enqueue(newPoint);
             }
 
-            RaycastHit2D right = Physics2D.Raycast(tile.transform.position, Vector2.right, _offsetX, 1 << LayerMask.NameToLayer("Grid"));
             if (right.collider != null)
             {
                 if (right.collider.gameObject != null)
-                    FloodFill(right.collider.gameObject);
+                {
+                    if (right.collider.gameObject.name.Contains("Circle"))
+                        return;
+                    else if (right.collider.gameObject.name.Contains("Boundary") || right.collider.gameObject.name.Contains("Wall"))
+                        checkedPoints.Add(right.point);
+                }
+            }
+            else
+            {
+                Vector3 newPoint = new Vector3(_point.x + RAYCAST_DISTANCE, _point.y, _point.z);
+                if (!checkedPoints.Contains(newPoint))
+                    pointsToCheck.Enqueue(newPoint);
             }
 
-            RaycastHit2D up = Physics2D.Raycast(tile.transform.position, Vector2.up, _offsetX, 1 << LayerMask.NameToLayer("Grid"));
             if (up.collider != null)
             {
                 if (up.collider.gameObject != null)
-                    FloodFill(up.collider.gameObject);
+                {
+                    if (up.collider.gameObject.name.Contains("Circle"))
+                        return;
+                    else if (up.collider.gameObject.name.Contains("Boundary") || up.collider.gameObject.name.Contains("Wall"))
+                        checkedPoints.Add(up.point);
+                }
             }
-            RaycastHit2D down = Physics2D.Raycast(tile.transform.position, Vector2.down, _offsetX, 1 << LayerMask.NameToLayer("Grid"));
+            else
+            {
+                Vector3 newPoint = new Vector3(_point.x, _point.y + RAYCAST_DISTANCE, _point.z);
+                if (!checkedPoints.Contains(newPoint))
+                    pointsToCheck.Enqueue(newPoint);
+            }
+
             if (down.collider != null)
             {
                 if (down.collider.gameObject != null)
-                    FloodFill(down.collider.gameObject);
+                {
+                    if (down.collider.gameObject.name.Contains("Circle"))
+                        return;
+                    else if (down.collider.gameObject.name.Contains("Boundary") || down.collider.gameObject.name.Contains("Wall"))
+                        checkedPoints.Add(down.point);
+                }
             }
-        }        
-    }
-
-    private void ResetTileCounts()
-    {
-        _startingColorCount = 0;
-        _targetColorCount = 0;
-        GameObject[] tiles = GameObject.FindGameObjectsWithTag("Tile");
-        foreach (GameObject tile in tiles)
-        {
-            if (!tile.name.Contains("Black"))
-                _startingColorCount++;
-            else if (tile.name.Contains("Black"))
-                _targetColorCount++;
+            else
+            {
+                Vector3 newPoint = new Vector3(_point.x, _point.y - RAYCAST_DISTANCE, _point.z);
+                if (!checkedPoints.Contains(newPoint))
+                    pointsToCheck.Enqueue(newPoint);
+            }
         }
-        Debug.Log("Black Tile Count: " + _targetColorCount);
-        Debug.Log("Cyan Tile Count: " + _startingColorCount);
+
+        float minX = checkedPoints.OrderBy(p => p.x).First().x;
+        float maxX = checkedPoints.OrderByDescending(p => p.x).First().x;
+        float minY = checkedPoints.OrderBy(p => p.y).First().y;
+        float maxY = checkedPoints.OrderByDescending(p => p.y).First().y;
+        Debug.Log("minX: " + minX);
+        Debug.Log("maxX: " + maxX);
+        Debug.Log("minY: " + minY);
+        Debug.Log("maxY: " + maxY);
     }
-
-    private float GetMedianXCoordinate(List<GameObject> objects)
-    {
-        float median = 0;
-        int cnt = 0;
-        List<float> numbers = new List<float>();
-        foreach (GameObject obj in objects)
-        {
-            numbers.Add(obj.transform.position.x);
-            cnt++;
-        }
-        numbers.Sort();
-        int halfIndex = numbers.Count / 2;
-        median = numbers[halfIndex];
-        return median;
-    }
-
-    private float GetMedianYCoordinate(List<GameObject> objects)
-    {
-        float median = 0;
-        int cnt = 0;
-        List<float> numbers = new List<float>();
-        foreach (GameObject obj in objects)
-        {
-            numbers.Add(obj.transform.position.y);
-            cnt++;
-        }
-        numbers.Sort();
-        int halfIndex = numbers.Count / 2;
-        median = numbers[halfIndex];
-        return median;
-    }
-
-
-
-
 }

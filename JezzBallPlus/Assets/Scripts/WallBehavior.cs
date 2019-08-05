@@ -4,8 +4,10 @@ using UnityEngine;
 
 public class WallBehavior : MonoBehaviour
 {
+    public GameObject sibling;
     private SpriteRenderer _sprite;
     private const string BOUNDARY = "Boundary";
+    private const string WALL = "Wall";
     private const string ENEMY = "Enemy";
     private bool _isExtending;
     void Start()
@@ -22,7 +24,8 @@ public class WallBehavior : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (string.Equals(collision.gameObject.tag, BOUNDARY, System.StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(collision.gameObject.tag, BOUNDARY, System.StringComparison.OrdinalIgnoreCase)
+            || (string.Equals(collision.gameObject.tag, WALL, System.StringComparison.OrdinalIgnoreCase) && collision.gameObject.GetComponent<WallBehavior>().IsExtending() == false))
         {
             _isExtending = false;
             _sprite.color = Color.black;
@@ -31,9 +34,14 @@ public class WallBehavior : MonoBehaviour
             GameObject grid = GameObject.Find("GridManager");
             if (grid != null)
             {
-                grid.GetComponent<GridController>().OnWallCreate(gameObject);
+                if (sibling != null)
+                {
+                    //only flood-fill if this is a newly generated wall, whose sibling wall was also generated successfully
+                    if (sibling.GetComponent<WallBehavior>().IsExtending() == false)
+                        grid.GetComponent<GridController>().OnWallCreate(gameObject);
+                }
             }
-        }            
+        }
     }
 
 

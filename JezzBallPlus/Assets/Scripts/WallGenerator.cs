@@ -12,10 +12,11 @@ public class WallGenerator : MonoBehaviour
     public Vector3 CursorRotation;
 
     [SerializeField]
-    private float _scaleSpeed = 0.05f;    
+    private float _scaleSpeed = 0.05f;
 
     void Start()
     {
+
         _wallOne = Instantiate(_wallPrefab) as GameObject;
         _wallOne.GetComponent<SpriteRenderer>().color = Color.red;
         _wallOne.transform.position = transform.position;
@@ -30,6 +31,9 @@ public class WallGenerator : MonoBehaviour
         _wallTwo.transform.position = transform.position;
         _wallTwo.transform.position = new Vector3(transform.position.x + (width / 2), transform.position.y - (height / 2), 0);
         _wallTwo.transform.SetParent(transform, true);
+
+        _wallOne.GetComponent<WallBehavior>().sibling = _wallTwo;
+        _wallTwo.GetComponent<WallBehavior>().sibling = _wallOne;
     }
 
     void Update()
@@ -49,5 +53,7 @@ public class WallGenerator : MonoBehaviour
         if (transform.childCount == 0)
             Destroy(this.gameObject);
     }
+
+    
 
 }
