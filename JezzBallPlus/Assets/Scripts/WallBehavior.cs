@@ -38,7 +38,12 @@ public class WallBehavior : MonoBehaviour
                 {
                     //only flood-fill if this is a newly generated wall, whose sibling wall was also generated successfully
                     if (sibling.GetComponent<WallBehavior>().IsExtending() == false)
+                    {
                         grid.GetComponent<GridController>().OnWallCreate(gameObject);
+                        //set both siblings to null to prevent excessive flood-filling
+                        sibling.GetComponent<WallBehavior>().sibling = null;
+                        sibling = null;
+                    }                     
                 }
             }
         }

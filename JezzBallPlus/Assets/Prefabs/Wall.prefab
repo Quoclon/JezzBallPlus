@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: -6864326173328567534}
   m_Layer: 0
   m_Name: Wall
-  m_TagString: Untagged
+  m_TagString: Boundary
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -125,6 +125,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e281f37d4000974996ee05850be1677, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  sibling: {fileID: 0}
 --- !u!50 &-6864326173328567534
 Rigidbody2D:
   serializedVersion: 4
