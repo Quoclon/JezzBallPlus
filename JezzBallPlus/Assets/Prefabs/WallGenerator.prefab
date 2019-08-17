@@ -94,4 +94,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _wallPrefab: {fileID: 4358171210903929462, guid: a5c45cdfaf8e9c640a768220ffbc2956,
     type: 3}
-  _scaleSpeed: 0.04
+  CursorRotation: {x: 0, y: 0, z: 0}
+  _scaleSpeed: 0.15

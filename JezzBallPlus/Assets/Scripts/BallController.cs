@@ -8,10 +8,19 @@ public class BallController : MonoBehaviour
     private SpriteRenderer _sprite;
     private Rigidbody2D _body;
     private CircleCollider2D _circle;
+    private AudioSource _audio;
 
     //sprites
     [SerializeField]
     private Sprite _ballSprite;
+
+    //sounds
+    [SerializeField]
+    private AudioClip _ping;
+    [SerializeField]
+    private AudioClip _zing;
+    [SerializeField]
+    private AudioClip _crash;
 
     //private variables
     [SerializeField]
@@ -28,6 +37,7 @@ public class BallController : MonoBehaviour
         _sprite = GetComponent<SpriteRenderer>();
         _body = GetComponent<Rigidbody2D>();
         _circle = GetComponent<CircleCollider2D>();
+        _audio = GetComponent<AudioSource>();
 
         int randX = Random.Range(0, directionArray.Length);
         int randY = Random.Range(0, directionArray.Length);
@@ -51,6 +61,11 @@ public class BallController : MonoBehaviour
             RaycastHit2D hit = hitBuffer[0];
             Vector2 collisionPoint = hit.point;
 
+            if (hit.collider.gameObject.name.Contains("Circle"))
+                _audio.PlayOneShot(_ping);
+            if (hit.collider.gameObject.gameObject.name.Contains("Square") || hit.collider.gameObject.tag.Contains("Boundary"))
+                _audio.PlayOneShot(_ping);
+
             if (Mathf.Abs(collisionPoint.y - _body.transform.position.y) >= collisionBoundary)
             {
                 yVel *= -1;
@@ -71,8 +86,15 @@ public class BallController : MonoBehaviour
             if(string.Equals(hit.transform.gameObject.tag, "Wall", System.StringComparison.OrdinalIgnoreCase))
             {
                 if (hit.transform.gameObject.GetComponent<WallBehavior>().IsExtending() == true)
+                {
+                    Messenger.Broadcast(GameEvent.LIVE_LOST);
                     Destroy(hit.transform.gameObject);
+                    _audio.PlayOneShot(_crash);
+                }
+                else
+                    _audio.PlayOneShot(_ping);
             }
         }        
     }
+
 }

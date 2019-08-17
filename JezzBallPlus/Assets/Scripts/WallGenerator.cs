@@ -12,7 +12,7 @@ public class WallGenerator : MonoBehaviour
     public Vector3 CursorRotation;
 
     [SerializeField]
-    private float _scaleSpeed = 0.1f;
+    private float _scaleSpeed = 0.15f;
 
     void Start()
     {

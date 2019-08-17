@@ -15,20 +15,30 @@ public class GridController : MonoBehaviour
     private GameObject _verticalWall;
 
     private float _arenaArea;
-    private float _filledArea;
-    private float _filledAreaPercent;
+    private float _filledArea = 0;
+    private float _filledAreaPercent = 0;
 
     private float _squareSize = 0.1f;
     private const float FLOOD_FILL_OFFSET = 0.01f;
     private const float RAYCAST_DISTANCE = 0.5f;
     private const string ON_WALL_CREATE_AUDIT = "OnWallCreate: Wall Position: {0}, Boundary Min X: {1}, Boundary Max X: {2}, Y: {3}";
-    private const string FLOOD_FILL_AUDIT = "Flood Fill: Starting Point {0}, MinX: {1}, MaxX: {2}, MinY: {3}, MaxY: {4}, New Wall Position: {5}";    
+    private const string FLOOD_FILL_AUDIT = "Flood Fill: Starting Point {0}, MinX: {1}, MaxX: {2}, MinY: {3}, MaxY: {4}, New Wall Position: {5}";
+
+    private void Awake()
+    {
+        Messenger.AddListener(GameEvent.ADVANCE_LEVEL, OnAdvanceLevel);
+    }
+
+    private void OnDestroy()
+    {
+        Messenger.RemoveListener(GameEvent.ADVANCE_LEVEL, OnAdvanceLevel);
+    }
 
     void Start()
     {
         BoxCollider2D horizontalBox = _horizontalWall.GetComponent<BoxCollider2D>();
         BoxCollider2D verticalBox = _verticalWall.GetComponent<BoxCollider2D>();
-        _arenaArea = horizontalBox.bounds.size.x * verticalBox.bounds.size.y;
+        _arenaArea = 86000;
     }
     // Update is called once per frame
     void Update()
@@ -36,13 +46,16 @@ public class GridController : MonoBehaviour
 
     }
 
+    private void OnAdvanceLevel()
+    {
+        _filledAreaPercent = 0;
+        _filledArea = 0;
+    }
+
     public void OnWallCreate(GameObject wall)
     {
-        BoxCollider2D box = wall.GetComponent<BoxCollider2D>();
-        float area = box.bounds.size.x * box.bounds.size.y;
-        _filledArea += area;
-        _filledAreaPercent = (_filledArea / _arenaArea) * 100f;
-        Debug.Log("ROTATION IS: " + wall.transform.rotation.z);
+        BoxCollider2D box = wall.GetComponent<BoxCollider2D>();        
+       // Debug.Log("ROTATION IS: " + wall.transform.rotation.z);
 
         //get direction of wall
         //if z-rotation is 0 or 180 it is a vertical wall
@@ -184,7 +197,17 @@ public class GridController : MonoBehaviour
         float xScale = xLength / _squareSize;
         float yScale = yLength / _squareSize;
         newWall.transform.localScale = new Vector3(xScale, yScale, 1);
-        
+
+        BoxCollider2D box = newWall.GetComponent<BoxCollider2D>();
+        //float area = (box.bounds.max.x - box.bounds.min.x) * (box.bounds.max.y - box.bounds.min.y);
+        float area = xScale * yScale;
+        _filledArea += area;
+        _filledAreaPercent = (_filledArea / _arenaArea) * 200f;
+        Debug.Log("Filled Area Percent: " + _filledAreaPercent);
+        Messenger<float>.Broadcast(GameEvent.GRID_UPDATE, _filledAreaPercent);
+
+        //Debug.Log("NEW PERCENT: " + _filledAreaPercent);
+
         Debug.Log(string.Format(FLOOD_FILL_AUDIT, startingPoint.ToString(), minX, maxX, minY, maxY, newWall.transform.position.ToString()));
     }
 }

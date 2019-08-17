@@ -49,8 +49,6 @@ public class WallBehavior : MonoBehaviour
         }
     }
 
-
-
     public bool IsExtending()
     {
         return _isExtending;

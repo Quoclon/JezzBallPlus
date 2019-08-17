@@ -6,10 +6,14 @@ public class PlayerController : MonoBehaviour
 {
     //GameObject components
     private SpriteRenderer _sprite;
+    private AudioSource _audio;
 
     //sprites
     [SerializeField]
     private Sprite _playerSprite;
+
+    [SerializeField]
+    private AudioClip _laser;
 
     [SerializeField]
     private GameObject _wallGeneratorPrefab;
@@ -26,6 +30,7 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         _sprite = GetComponent<SpriteRenderer>();
+        _audio = GetComponent<AudioSource>();
         _rotationType = RotationType.ClickTwo;
     }
 
@@ -42,8 +47,9 @@ public class PlayerController : MonoBehaviour
         {
             if (_currentWallGenerator == null)
             {
+                _audio.PlayOneShot(_laser);
                 _currentWallGenerator = Instantiate(_wallGeneratorPrefab) as GameObject;
-                _currentWallGenerator.transform.position = gameObject.transform.position; //todo: looks like the wall generates slightly to the right of the cursor?
+                _currentWallGenerator.transform.position = gameObject.transform.position;
                 _currentWallGenerator.GetComponent<WallGenerator>().CursorRotation = transform.eulerAngles;
             }
         }
